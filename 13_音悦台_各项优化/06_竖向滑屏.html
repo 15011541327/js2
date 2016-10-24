@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="Height=device-Height,user-scalable=no" />
+		<title>竖向滑屏</title>
+		<style>
+			*{
+				margin: 0;
+				padding: 0;
+			}
+			
+			html,body{
+				height: 100%;
+				overflow: hidden;
+			}
+			
+			#wrap{
+				height: 100%;
+				overflow: hidden;
+			}
+		</style>
+		<script src="js/transform.js"></script>
+		<script>
+			window.onload=function(){
+				setText();
+				
+				var wrap =document.querySelector("#wrap");
+				scroll(wrap);
+			}
+			
+			function setText(){
+				var scroll =document.querySelector("#scroll");
+				var text ="";
+				for(var i=0;i<300;i++){
+					text+="nmxnmxnmxnmxnmxnmxnmxnmxnmx----"+i+"<br/>";
+				}
+				scroll.innerHTML=text;
+			}
+			
+			function scroll(wrap){
+				var child= wrap.children[0];
+				
+				//开启3d硬件加速
+				cssTransform(child,"translateZ",0.00001);
+				
+				//定义手指初始位置(Y)
+				var startpoint=0;
+				//定义ul的初始位置(Y)
+				var startY =0;
+				
+				var minY =wrap.clientHeight - child.offsetHeight;
+				
+				//定义手指滑动距离与ul移动距离的一个比例
+				var flag = 1;
+				
+				//上一次的位置
+				var lastDis = 0;
+				//上一次的时间值
+				var lastTime = 0;
+				//距离的差值
+				var disVal=0;
+				//时间差值
+				var disTime =0;
+				
+				wrap.addEventListener("touchstart",function(ev){
+					child.style.transition ="none";
+					
+					startpoint = ev.changedTouches[0].clientY;
+					startY = cssTransform(child,"translateY");
+					
+					
+					lastDis = startpoint;
+					lastTime = new Date().getTime();
+					disVal=0;
+					disTime =1;//解决点击时候的一个bug
+					
+				});
+				
+				wrap.addEventListener("touchmove",function(ev){
+					var nowpoint = ev.changedTouches[0].clientY;
+					var dis =nowpoint - startpoint;
+					var translateY = startY+dis;
+					var nowTime =new Date().getTime();
+					if(translateY>0){
+	//					translateY =0;
+						flag = 0.6-translateY/(wrap.clientHeight*2);
+						translateY =translateY*flag;
+					}
+					if(translateY<minY){
+						var over =  minY - translateY;
+						flag = 0.6-over/(wrap.clientHeight*2);
+						translateY =minY-over*flag;
+	//					translateY=minY;
+					}
+					
+					disVal=nowpoint - lastDis;
+					disTime =nowTime - lastTime;
+					lastDis = nowpoint;
+					lastTime = nowTime;
+					
+					
+					cssTransform(child,"translateY",translateY);
+				});
+				
+				
+				wrap.addEventListener("touchend",function(){
+					var speed = disVal /disTime;
+					var translateY = cssTransform(child,"translateY");
+					var traget = translateY+ speed*300;
+					var time = Math.abs(traget*12);
+						time=time < 300?300:time;
+					var bessel ="";
+					if(traget>0){
+						traget=0;
+						bessel ="cubic-bezier(.12,.39,.61,1.75)";
+					}
+					if(traget<minY){
+						traget=minY;
+						bessel ="cubic-bezier(.12,.39,.61,1.75)";
+					}
+					
+					child.style.transition=time+"ms "+bessel;
+					cssTransform(child,"translateY",traget);
+				});
+			}
+
+		</script>
+	</head>
+	<body>
+		<div id="wrap">
+			<div id="scroll"></div>
+		</div>
+	</body>
+</html>
